@@ -40,7 +40,7 @@ This script connects to one or more SharePoint Online sites and removes a specif
 | PowerShell | PowerShell 7+ recommended (compatible with Windows PowerShell 5.1) |
 | PnP.PowerShell | Install via `Install-Module PnP.PowerShell` |
 | Entra App Registration | App registration with certificate-based authentication |
-| Permissions | `Sites.ReadWrite.All` (minimum) or `Sites.FullControl.All` |
+| Permissions | SharePoint:Sites.FullControl.All` |
 
 Install the PnP.PowerShell module if not already present:
 
@@ -58,9 +58,8 @@ The script uses **certificate-based authentication** via an Entra (Azure AD) App
 
 1. **Create an App Registration** in the [Entra Admin Center](https://entra.microsoft.com)
 2. **Grant API permissions:**
-   - `SharePoint > Sites.ReadWrite.All` (Application permission)
-   - `Microsoft Graph > User.Read.All` (Application permission)
-   - Grant admin consent for both permissions
+   - `SharePoint > Sites.FullControl.All` (Application permission)
+   - Grant admin consent 
 3. **Upload or generate a certificate** on the App Registration under *Certificates & Secrets*
 4. **Install the certificate** to the local machine's certificate store (or note the thumbprint if already installed)
 5. **Note the following values** for the configuration section:
