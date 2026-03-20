@@ -59,9 +59,6 @@
         
         Logging:
         All operations are logged to a timestamped file in %TEMP% directory
-
-    .LINK
-        https://docs.microsoft.com/en-us/sharepoint/dev/apis/sharepoint-rest-api
         
     .LINK
         https://pnp.github.io/powershell/
