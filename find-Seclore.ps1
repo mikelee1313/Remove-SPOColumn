@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-    Finds SharePoint Online FileDownloaded events performed via the Seclore-0365
+    Finds SharePoint Online FileDownloaded events performed via the Seclore-o365
     client app, across a list of site collections, using the Unified Audit Log.
 
 .DESCRIPTION
     Queries Search-UnifiedAuditLog for the SharePoint FileDownloaded operation
     and filters results to only those where the AuditData AppAccessContext
-    contains ClientAppName = "Seclore-0365".
+    contains ClientAppName = "Seclore-o365".
 
 .PARAMETER SiteListPath
     Path to a text file containing one SPO site URL per line.
@@ -170,7 +170,7 @@ if (-not $sites) {
 Write-Host "SPO Seclore Download Audit" -ForegroundColor Cyan
 Write-Host "  Sites    : $($sites.Count)" -ForegroundColor Cyan
 Write-Host "  Window   : $($StartDate.ToString('u'))  ->  $($EndDate.ToString('u'))" -ForegroundColor Cyan
-Write-Host "  Filter   : Operation=FileDownloaded, ClientAppName=Seclore-0365" -ForegroundColor Cyan
+Write-Host "  Filter   : Operation=FileDownloaded, ClientAppName=Seclore-o365" -ForegroundColor Cyan
 Write-Host ""
 
 $allResults = [System.Collections.Generic.List[PSObject]]::new()
@@ -195,7 +195,7 @@ foreach ($site in $sites) {
             foreach ($rec in $records) {
                 try { $audit = $rec.AuditData | ConvertFrom-Json -ErrorAction Stop }
                 catch { continue }
-                if ($audit.AppAccessContext.ClientAppName -ne 'Seclore-0365') { continue }
+                if ($audit.AppAccessContext.ClientAppName -ne 'Seclore-o365') { continue }
                 $allResults.Add((ConvertTo-FlatRecord -Record $rec))
                 $secloreCount++
             }
@@ -222,7 +222,7 @@ Write-Progress -Activity "Querying Unified Audit Log" -Completed
 #region ── Output ───────────────────────────────────────────────────────────────
 
 if ($allResults.Count -eq 0) {
-    Write-Host "`nNo Seclore-0365 FileDownloaded events found across any sites in the specified window." -ForegroundColor Yellow
+    Write-Host "`nNo Seclore-o365 FileDownloaded events found across any sites in the specified window." -ForegroundColor Yellow
 }
 else {
     $allResults |
@@ -231,7 +231,7 @@ else {
     SiteUrl, ClientAppName, ClientAppId, ClientIP, UserAgent |
     Export-Csv -Path $OutputPath -NoTypeInformation -Encoding UTF8
 
-    Write-Host "`nResults  : $($allResults.Count) Seclore-0365 FileDownloaded event(s)" -ForegroundColor Cyan
+    Write-Host "`nResults  : $($allResults.Count) Seclore-o365 FileDownloaded event(s)" -ForegroundColor Cyan
     Write-Host "Exported : $OutputPath" -ForegroundColor Green
 
     # Summary by site
