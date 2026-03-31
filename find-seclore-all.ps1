@@ -75,7 +75,8 @@ function Get-AuditEvents {
         [datetime] $Start,
         [datetime] $End,
         [string[]] $Operations,
-        [int]      $PageSize
+        [int]      $PageSize,
+        [string]   $FreeText
     )
 
     $allRecords = [System.Collections.Generic.List[PSObject]]::new()
@@ -89,6 +90,7 @@ function Get-AuditEvents {
             -StartDate       $Start `
             -EndDate         $End `
             -Operations      $Operations `
+            -FreeText        $FreeText `
             -SessionId       $sessionId `
             -SessionCommand  ReturnLargeSet `
             -ResultSize      $PageSize `
@@ -127,6 +129,12 @@ function ConvertTo-FlatRecord {
         $relPath = if ($stripped -match '^[/\\]?$') { '(site root)' } else { $stripped.TrimStart('/') }
     }
 
+    # AppAccessContext can be a nested JSON string in tenant-wide UAL results
+    $appCtx = $audit.AppAccessContext
+    if ($appCtx -is [string] -and $appCtx) {
+        try { $appCtx = $appCtx | ConvertFrom-Json -ErrorAction Stop } catch { $appCtx = $null }
+    }
+
     [PSCustomObject]@{
         DateTime      = $Record.CreationDate
         PerformedBy   = $Record.UserIds
@@ -135,8 +143,8 @@ function ConvertTo-FlatRecord {
         FileName      = $audit.SourceFileName
         RelativePath  = $relPath
         SiteUrl       = $audit.SiteUrl
-        ClientAppName = $audit.AppAccessContext.ClientAppName
-        ClientAppId   = $audit.AppAccessContext.ClientAppId
+        ClientAppName = $appCtx.ClientAppName
+        ClientAppId   = $appCtx.ClientAppId
         ClientIP      = $audit.ClientIP
         UserAgent     = $audit.UserAgent
     }
@@ -161,15 +169,23 @@ try {
         -Start      $StartDate `
         -End        $EndDate `
         -Operations $PermissionOperations `
+        -FreeText   'Seclore-O365' `
         -PageSize   $ResultSize
 
     Write-Progress -Activity "Querying Unified Audit Log" -Status "Filtering for Seclore-O365..."
 
     if ($records -and $records.Count -gt 0) {
         foreach ($rec in $records) {
+            # Pre-filter on raw string before JSON parse (handles nested JSON string edge case)
+            if ($rec.AuditData -notlike '*Seclore-O365*') { continue }
             try { $audit = $rec.AuditData | ConvertFrom-Json -ErrorAction Stop }
             catch { continue }
-            if ($audit.AppAccessContext.ClientAppName -ne 'Seclore-O365') { continue }
+            # Resolve AppAccessContext whether it is an object or a nested JSON string
+            $appCtx = $audit.AppAccessContext
+            if ($appCtx -is [string] -and $appCtx) {
+                try { $appCtx = $appCtx | ConvertFrom-Json -ErrorAction Stop } catch { $appCtx = $null }
+            }
+            if ($appCtx.ClientAppName -ne 'Seclore-O365') { continue }
             $allResults.Add((ConvertTo-FlatRecord -Record $rec))
         }
         Write-Host "  Total FileDownloaded events  : $($records.Count)" -ForegroundColor Gray
@@ -187,7 +203,7 @@ Write-Progress -Activity "Querying Unified Audit Log" -Completed
 
 #endregion
 
-#region ── Output ───────────────────────────────────────────────────────────────
+#region -------------------------- Output ---------------------------------------------------------
 
 if ($allResults.Count -eq 0) {
     Write-Host "`nNo Seclore-O365 FileDownloaded events found in the specified window." -ForegroundColor Yellow
